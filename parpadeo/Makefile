@@ -16,6 +16,7 @@ CC              = avr-gcc
 LD              = avd-gcc
 OBJCOPY         = avr-objcopy
 OBJDUMP         = avr-objdump
+SIZE            = avr-size
 
 CFLAGS          = -Wall $(OPTIMIZE) -mmcu=$(MCU_TARGET) $(DEFS)
 LDFLAGS         =
@@ -26,6 +27,7 @@ all: $(PRG).hex
 
 %.elf: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(SIZE) $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
