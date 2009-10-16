@@ -18,9 +18,9 @@ OBJCOPY         = avr-objcopy
 OBJDUMP         = avr-objdump
 
 CFLAGS          = -Wall $(OPTIMIZE) -mmcu=$(MCU_TARGET) $(DEFS)
-LDFLAGS         = -Wl,-Map,$(PRG).map
+LDFLAGS         =
 
-.PHONY: all clean program-flash program-eeprom
+.PHONY: all clean program-flash
 
 all: $(PRG).hex
 
@@ -36,15 +36,9 @@ all: $(PRG).hex
 %.hex: %.elf
 	$(OBJCOPY) -j .text -j .data -O ihex $< $@
 
-%_eeprom.hex: %.elf
-	$(OBJCOPY) -j .eeprom --change-section-lma .eeprom=0 -O ihex $< $@
 
-
-program-flash: %.hex
+program-flash: $(PRG).hex
 	$(ISP) -p $(ISP_PARTNO) -P $(ISP_PORT) -c $(ISP_PROGRAMMER) -U flash:w:$<
 
-program-eeprom: %_eeprom.hex
-	$(ISP) -p $(ISP_PARTNO) -P $(ISP_PORT) -c $(ISP_PROGRAMMER) -U eeprom:w:$<
-
 clean:
-	rm -rf *.o *.elf *.lst *.map *.hex
+	rm -rf *.o *.elf *.lst *.hex
