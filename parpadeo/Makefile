@@ -18,7 +18,7 @@ OBJCOPY         = avr-objcopy
 OBJDUMP         = avr-objdump
 SIZE            = avr-size
 
-CFLAGS          = -Wall $(OPTIMIZE) -mmcu=$(MCU_TARGET) $(DEFS)
+CFLAGS          = -g -Wall $(OPTIMIZE) -mmcu=$(MCU_TARGET) $(DEFS)
 LDFLAGS         =
 
 .PHONY: all clean program-flash
