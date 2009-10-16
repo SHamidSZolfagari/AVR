@@ -27,7 +27,7 @@ all: $(PRG).hex $(PRG).elf $(PRG).lst
 
 %.elf: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
-	avr-size $@
+	$(SIZE) $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
