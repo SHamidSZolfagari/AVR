@@ -2,7 +2,7 @@
  * Parpadea un "led" en el PIN1 del PORTB
  */
 
-#define F_CPU 1000000L
+#define F_CPU 1000000UL
 #include <avr/io.h>
 #include <util/delay.h>
 
