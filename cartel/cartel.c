@@ -8,7 +8,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/pgmspace.h>
-#include "font.h"
+#include "font5x7.h"
 
 #define MAX_X 5
 #define MAX_Y 7
@@ -21,7 +21,7 @@ int main(void)
 	int x, y;
 	int i, t;
 	
-	char msg[] = "HOLA VITEH  ";
+	char msg[] = "   Hola viteh!";
 	
 	while (1) {
 		for (i = 0; msg[i] != '\0'; i++) {
