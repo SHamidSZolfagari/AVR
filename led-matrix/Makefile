@@ -13,7 +13,7 @@ LIBS            =
 OPTIMIZE        = -O2
 
 CC              = avr-gcc
-LD              = avd-gcc
+LD              = avr-gcc
 OBJCOPY         = avr-objcopy
 OBJDUMP         = avr-objdump
 SIZE            = avr-size
