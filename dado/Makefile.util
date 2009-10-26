@@ -1,0 +1,14 @@
+.PHONY: all clean
+
+CFLAGS = -O2 -Wall -ansi -pedantic
+
+all: font2hexa
+
+font2hexa: font2hexa.o
+	$(CC) $< -o $@
+
+font2hexa.o: font2hexa.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	$(RM) font2hexa.o font2hexa
