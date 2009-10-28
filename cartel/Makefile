@@ -49,7 +49,8 @@ LDFLAGS += $(LIBS)
 OBJ = $(SRC:.c=.o) $(ASRC:.S=.o) 
 LST = $(SRC:.c=.lst) $(ASRC:.S=.lst)
 
-.PHONY : all deps build elf hex eep lss sym coff extcoff clean program-flash program-eeprom size-elf size-hex
+.PHONY : all deps build elf hex eep lss sym coff extcoff clean \
+	program-flash program-eeprom size-elf size-hex
 .SECONDARY : $(TARGET).elf
 .PRECIOUS : $(OBJ)
 
