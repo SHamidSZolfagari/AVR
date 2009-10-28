@@ -44,11 +44,12 @@ LDFLAGS = -Wl,-Map=$(TARGET).map,--cref
 #LDFLAGS += -Wl,-u,vfprintf -lprintf_flt
 #LDFLAGS += -Wl,-u,vfscanf -lscanf_flt
 #LDFLAGS += -lm
+LDFLAGS += $(LIBS)
 
 OBJ = $(SRC:.c=.o) $(ASRC:.S=.o) 
 LST = $(SRC:.c=.lst) $(ASRC:.S=.lst)
 
-.PHONY : all build elf hex eep lss sym coff extcoff clean program-flash program-eeprom size-elf size-hex
+.PHONY : all deps build elf hex eep lss sym coff extcoff clean program-flash program-eeprom size-elf size-hex
 .SECONDARY : $(TARGET).elf
 .PRECIOUS : $(OBJ)
 
@@ -77,11 +78,11 @@ sym: $(TARGET).sym
 %.i : %.c
 	$(CC) -E $(CFLAGS) $< -o $@
 
+%.d : %.c
+	$(CC) -M $(CFLAGS) $< -o $@
+
 %.o : %.S
 	$(CC) -c $(ASFLAGS) $< -o $@
-
-%.d : %.c
-	$(CC) -E $(CFLAGS) -M -MP -MF $(*F).d $<
 
 %.hex: %.elf
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
