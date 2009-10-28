@@ -49,8 +49,7 @@ LDFLAGS += $(LIBS)
 OBJ = $(SRC:.c=.o) $(ASRC:.S=.o) 
 LST = $(SRC:.c=.lst) $(ASRC:.S=.lst)
 
-.PHONY : all deps build elf hex eep lss sym coff extcoff clean \
-	program-flash program-eeprom size-elf size-hex
+.PHONY : all deps build elf hex eep lss sym clean burn-flash burn-eeprom size
 .SECONDARY : $(TARGET).elf
 .PRECIOUS : $(OBJ)
 
@@ -98,38 +97,16 @@ sym: $(TARGET).sym
 %.sym: %.elf
 	$(NM) -n $< > $@
 
-
-coff: $(TARGET).elf
-	$(OBJCOPY) --debugging \
-	--change-section-address .data-0x800000 \
-	--change-section-address .bss-0x800000 \
-	--change-section-address .noinit-0x800000 \
-	--change-section-address .eeprom-0x810000 
-	-O coff-avr $< $(TARGET).cof
-
-extcoff: $(TARGET).elf
-	$(OBJCOPY) --debugging \
-	--change-section-address .data-0x800000 \
-	--change-section-address .bss-0x800000 \
-	--change-section-address .noinit-0x800000 \
-	--change-section-address .eeprom-0x810000 
-	-O coff-ext-avr $< $(TARGET).cof
-
-
-size-hex: $(TARGET).hex
-	$(SIZE) --target=ihex $(TARGET).hex
-
-size-elf: $(TARGET).elf
-	$(SIZE) $(TARGET).elf
-
-program-flash: $(TARGET).hex
+burn-flash: $(TARGET).hex
 	$(AVRDUDE) -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
 	-U flash:w:$<
 
-program-eeprom: $(TARGET).eep
+burn-eeprom: $(TARGET).eep
 	$(AVRDUDE) -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
 	-U eeprom:w:$<
 
+size: $(TARGET).elf
+	$(SIZE) $<
 
 clean:
 	$(RM) $(TARGET).hex
