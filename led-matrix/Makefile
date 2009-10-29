@@ -1,65 +1,98 @@
 MCU = atmega8
 
 TARGET = led-matrix
-SRC = $(TARGET).c
-ASRC =
 
-CDEFS =
+C_SOURCES = led-matrix.c
 
-CINCS =
+S_SOURCES =
 
-LIBS = 
+DEFINES =
+
+INCLUDES =
+
+LDPATH =
+
+LDLIBS =
+
+
+DEBUG = stabs
+
+AVRDUDE_FLAGS = -p $(MCU)
+AVRDUDE_FLAGS += -c ponyser
+AVRDUDE_FLAGS += -P /dev/ttyS0
+
+CFLAGS = -mmcu=$(MCU)
+CFLAGS += -g$(DEBUG)
+CFLAGS += -std=gnu99
+CFLAGS += -Wall
+CFLAGS += -Wstrict-prototypes
+CFLAGS += -Os
+CFLAGS += -funsigned-char
+CFLAGS += -funsigned-bitfields
+CFLAGS += -fpack-struct
+CFLAGS += -fshort-enums
+CFLAGS += -Wa,-adhlns=$(<:.c=.lst)
+CFLAGS += $(DEFINES) $(INCLUDES)
+
+ASFLAGS = -mmcu=$(MCU)
+ASFLAGS += -Wa,-adhlns=$(<:.S=.lst),-g$(DEBUG)
+ASFLAGS += $(DEFINES) $(INCLUDES)
+
+LDFLAGS = -mmcu=$(MCU)
+LDFLAGS += -Wl,-Map=$(TARGET).map,--cref
+
+ARFLAGS = rcs
+
+OBJCOPY_FLASH_FLAGS = -O ihex
+OBJCOPY_FLASH_FLAGS += -R .eeprom
+OBJCOPY_FLASH_FLAGS += -R .fuse
+OBJCOPY_FLASH_FLAGS += -R .lock
+
+OBJCOPY_EEPROM_FLAGS = -O ihex
+OBJCOPY_EEPROM_FLAGS += -j .eeprom
+OBJCOPY_EEPROM_FLAGS += --set-section-flags=.eeprom="alloc,load"
+OBJCOPY_EEPROM_FLAGS += --change-section-lma .eeprom=0
+OBJCOPY_EEPROM_FLAGS += --no-change-warnings
 
 AVRDUDE = avrdude
-AVRDUDE_PROGRAMMER = ponyser
-AVRDUDE_PORT = /dev/ttyS0
-
 CC = avr-gcc
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE = avr-size
 NM = avr-nm
+AR = avr-ar
 
-CFLAGS = -mmcu=$(MCU) -I.
-CFLAGS += -gstabs
-CFLAGS += $(CDEFS) $(CINCS)
-CFLAGS += -Os
-CFLAGS += -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
-CFLAGS += -Wall -Wstrict-prototypes
-CFLAGS += -Wa,-adhlns=$(<:.c=.lst)
-CFLAGS += -std=gnu99
+OBJ = $(C_SOURCES:.c=.o) $(S_SOURCES:.S=.o)
+LST = $(C_SOURCES:.c=.lst) $(S_SOURCES:.S=.lst)
+DEP = $(C_SOURCES:.c=.d) $(S_SOURCES:.S=.d)
+PRE = $(C_SOURCES:.c=.i) $(S_SOURCES:.S=.i)
+ASM = $(C_SOURCES:.c=.s) $(S_SOURCES:.S=.s)
 
-ASFLAGS = -mmcu=$(MCU) -I.
-ASFLAGS += -Wa,-adhlns=$(<:.S=.lst),-gstabs 
+.PHONY : all
+.PHONY : build-exe build-lib
+.PHONY : elf hex eep lss sym
+.PHONY : burn-flash burn-eeprom
+.PHONY : size
+.PHONY : clean
 
-LDFLAGS = -Wl,-Map=$(TARGET).map,--cref
-# 64 KB of external RAM, starting after internal RAM (ATmega128!),
-# used for variables (.data/.bss) and heap (malloc()).
-#LDFLAGS += -Wl,-Tdata=0x801100,--defsym=__heap_end=0x80ffff
-# 64 KB of external RAM, starting after internal RAM (ATmega128!),
-# only used for heap (malloc()).
-#LDFLAGS += -Wl,--defsym=__heap_start=0x801100,--defsym=__heap_end=0x80ffff
-#LDFLAGS += -Wl,-u,vfprintf -lprintf_min
-#LDFLAGS += -Wl,-u,vfscanf -lscanf_min
-#LDFLAGS += -Wl,-u,vfprintf -lprintf_flt
-#LDFLAGS += -Wl,-u,vfscanf -lscanf_flt
-#LDFLAGS += -lm
-LDFLAGS += $(LIBS)
+.SECONDARY : $(TARGET).elf lib$(TARGET).a
 
-OBJ = $(SRC:.c=.o) $(ASRC:.S=.o) 
-LST = $(SRC:.c=.lst) $(ASRC:.S=.lst)
-
-.PHONY : all deps build elf hex eep lss sym clean burn-flash burn-eeprom size
-.SECONDARY : $(TARGET).elf
 .PRECIOUS : $(OBJ)
 
-all: deps build
+all:
 
-deps: $(SRC:.c=.d)
+build-exe: dep elf hex eep lss sym
 
-build: elf hex eep lss sym
+build-lib: dep lib
+
+dep: $(DEP)
+
+pre: $(PRE)
+asm: $(ASM)
 
 elf: $(TARGET).elf
+lib: lib$(TARGET).a
+
 hex: $(TARGET).hex
 eep: $(TARGET).eep
 lss: $(TARGET).lss 
@@ -67,29 +100,41 @@ sym: $(TARGET).sym
 
 
 %.elf: $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
+	$(CC) $(LDFLAGS) $^ $(LDPATH) $(LDLIBS) -o $@
+
+%.a : $(OBJ)
+	$(AR) $(ARFLAGS) $@ $^
+
 
 %.o : %.c
-	$(CC) -c $(CFLAGS) $< -o $@ 
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.o : %.S
+	$(CC) $(ASFLAGS) -c -o $@ $< 
+
+%.d : %.c
+	$(CC) -MM $(CFLAGS) $< -o $@
+
+%.d : %.S
+	$(CC) -MM $(CFLAGS) $< -o $@
 
 %.s : %.c
 	$(CC) -S $(CFLAGS) $< -o $@
 
+%.s : %.S
+	$(CC) -S $(CFLAGS) $< > $@
+
 %.i : %.c
 	$(CC) -E $(CFLAGS) $< -o $@
 
-%.d : %.c
-	$(CC) -M $(CFLAGS) $< -o $@
-
-%.o : %.S
-	$(CC) -c $(ASFLAGS) $< -o $@
+%.i : %.S
+	$(CC) -E $(CFLAGS) $< -o $@
 
 %.hex: %.elf
-	$(OBJCOPY) -O ihex -R .eeprom $< $@
+	$(OBJCOPY) $(OBJCOPY_FLASH_FLAGS) $< $@
 
 %.eep: %.elf
-	-$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
-	--change-section-lma .eeprom=0 -O ihex $< $@
+	$(OBJCOPY) $(OBJCOPY_EEPROM_FLAGS) $< $@
 
 %.lss: %.elf
 	$(OBJDUMP) -h -S $< > $@
@@ -97,32 +142,30 @@ sym: $(TARGET).sym
 %.sym: %.elf
 	$(NM) -n $< > $@
 
+
 burn-flash: $(TARGET).hex
-	$(AVRDUDE) -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
-	-U flash:w:$<
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U flash:w:$<
 
 burn-eeprom: $(TARGET).eep
-	$(AVRDUDE) -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
-	-U eeprom:w:$<
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U eeprom:w:$<
+
 
 size: $(TARGET).elf
 	$(SIZE) $<
 
+
 clean:
 	$(RM) $(TARGET).hex
 	$(RM) $(TARGET).eep
-	$(RM) $(TARGET).obj
-	$(RM) $(TARGET).cof
-	$(RM) $(TARGET).elf
 	$(RM) $(TARGET).map
-	$(RM) $(TARGET).obj
 	$(RM) $(TARGET).sym
 	$(RM) $(TARGET).lss
+	$(RM) $(TARGET).elf
+	$(RM) lib$(TARGET).a
 	$(RM) $(OBJ)
 	$(RM) $(LST)
-	$(RM) $(SRC:.c=.s)
-	$(RM) $(SRC:.c=.i)
-	$(RM) $(SRC:.c=.d)
-
+	$(RM) $(DEP)
+	$(RM) $(PRE)
+	$(RM) $(ASM)
 
 -include $(wildcard *.d)
