@@ -70,7 +70,12 @@ ASM = $(C_SOURCES:.c=.s) $(S_SOURCES:.S=.s)
 
 .PHONY : all
 .PHONY : build-exe build-lib
-.PHONY : elf hex eep lss sym
+.PHONY : dep
+.PHONY : pre
+.PHONY : asm
+.PHONY : elf
+.PHONY : lib
+.PHONY : hex eep lss sym
 .PHONY : burn-flash burn-eeprom
 .PHONY : size
 .PHONY : clean
