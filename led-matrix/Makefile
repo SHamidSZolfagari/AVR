@@ -176,4 +176,4 @@ clean:
 	$(RM) $(PRE)
 	$(RM) $(ASM)
 
--include $(wildcard *.d)
+include $(wildcard $(DEP))
