@@ -77,7 +77,7 @@ ASM = $(C_SOURCES:.c=.s) $(S_SOURCES:.S=.s)
 .PHONY : lib
 .PHONY : hex eep lss sym
 .PHONY : burn-flash burn-eeprom
-.PHONY : size
+.PHONY : size-exe size-lib
 .PHONY : clean
 
 .SECONDARY : $(TARGET).elf lib$(TARGET).a
@@ -86,9 +86,9 @@ ASM = $(C_SOURCES:.c=.s) $(S_SOURCES:.S=.s)
 
 all:
 
-build-exe: dep elf hex eep lss sym
+build-exe: dep elf hex eep lss sym size-exe
 
-build-lib: dep lib
+build-lib: dep lib size-lib
 
 dep: $(DEP)
 
@@ -155,7 +155,10 @@ burn-eeprom: $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) -U eeprom:w:$<
 
 
-size: $(TARGET).elf
+size-exe: $(TARGET).elf
+	$(SIZE) $<
+
+size-lib: lib$(TARGET).a
 	$(SIZE) $<
 
 
