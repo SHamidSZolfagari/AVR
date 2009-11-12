@@ -1,0 +1,8 @@
+CFLAGS = -O2 -Wall -ansi -pedantic
+LDFLAGS = -lm
+
+.PHONY: all clean
+all: font2hexa frameerror
+
+clean:
+	$(RM) font2hexa.o font2hexa frameerror frameerror.o
