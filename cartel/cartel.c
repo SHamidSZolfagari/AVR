@@ -36,7 +36,6 @@ void main(void)
 				y++;
 			}
 			PORTB = ~(pgm_read_byte(&(Font5x7[(msg[y] - 0x20)*5 + x % 5])));
-			/* PORTB = ~0x7F; */
 			_delay_ms(1);
 			PORTB = 0x7F;
 		}
