@@ -41,6 +41,7 @@ ASFLAGS += $(DEFINES) $(INCLUDES)
 LDFLAGS = -mmcu=$(MCU)
 LDFLAGS += -Wl,-Map=$(TARGET).map,--cref
 LDFLAGS += -Wl,-u,vfprintf -lprintf_min
+LDFLAGS += -Wl,-u,vfscanf -lscanf_min
 
 ARFLAGS = rcs
 
