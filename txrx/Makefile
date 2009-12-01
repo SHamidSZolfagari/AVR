@@ -1,8 +1,8 @@
 MCU = atmega8
 
-TARGET = tx
+TARGET =
 
-C_SOURCES = tx.c
+C_SOURCES =
 
 S_SOURCES =
 
@@ -40,6 +40,10 @@ ASFLAGS += $(DEFINES) $(INCLUDES)
 
 LDFLAGS = -mmcu=$(MCU)
 LDFLAGS += -Wl,-Map=$(TARGET).map,--cref
+#LDFLAGS += -Wl,-u,vfprintf -lprintf_min
+#LDFLAGS += -Wl,-u,vfscanf -lscanf_min
+#LDFLAGS += -Wl,-u,vfprintf -lprintf_flt -lm
+#LDFLAGS += -Wl,-u,vfscanf -lscanf_flt -lm
 
 ARFLAGS = rcs
 
@@ -70,9 +74,14 @@ ASM = $(C_SOURCES:.c=.s) $(S_SOURCES:.S=.s)
 
 .PHONY : all
 .PHONY : build-exe build-lib
-.PHONY : elf hex eep lss sym
+.PHONY : dep
+.PHONY : pre
+.PHONY : asm
+.PHONY : elf
+.PHONY : lib
+.PHONY : hex eep lss sym
 .PHONY : burn-flash burn-eeprom
-.PHONY : size
+.PHONY : size-exe size-lib
 .PHONY : clean
 
 .SECONDARY : $(TARGET).elf lib$(TARGET).a
@@ -81,9 +90,9 @@ ASM = $(C_SOURCES:.c=.s) $(S_SOURCES:.S=.s)
 
 all:
 
-build-exe: dep elf hex eep lss sym
+build-exe: dep elf hex eep lss sym size-exe
 
-build-lib: dep lib
+build-lib: dep lib size-lib
 
 dep: $(DEP)
 
@@ -150,7 +159,10 @@ burn-eeprom: $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) -U eeprom:w:$<
 
 
-size: $(TARGET).elf
+size-exe: $(TARGET).elf
+	$(SIZE) $<
+
+size-lib: lib$(TARGET).a
 	$(SIZE) $<
 
 
@@ -168,4 +180,4 @@ clean:
 	$(RM) $(PRE)
 	$(RM) $(ASM)
 
--include $(wildcard *.d)
+include $(wildcard $(DEP))

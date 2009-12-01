@@ -42,6 +42,8 @@ LDFLAGS = -mmcu=$(MCU)
 LDFLAGS += -Wl,-Map=$(TARGET).map,--cref
 LDFLAGS += -Wl,-u,vfprintf -lprintf_min
 LDFLAGS += -Wl,-u,vfscanf -lscanf_min
+#LDFLAGS += -Wl,-u,vfprintf -lprintf_flt -lm
+#LDFLAGS += -Wl,-u,vfscanf -lscanf_flt -lm
 
 ARFLAGS = rcs
 
