@@ -50,7 +50,7 @@ int main(void)
 			r = clock[c] / (UBRR_BITS * baudio[b]) - 1;
 			if (r - floor(r) < ceil(r) - r) {
 				err = (1.0 - baudio[b] / (clock[c] / (UBRR_BITS * (floor(r) + 1.0)))) * 100.0;
-				if (err < ERROR_MAX) {
+				if (err < ERROR_MAX && floor(r) < 256) {
 					printf("%8d (%.2f)\t", (int) floor(r), err);
 				}
 				else {
@@ -58,7 +58,7 @@ int main(void)
 				}
 			} else {
 				err = (baudio[b] / (clock[c] / (UBRR_BITS * (ceil(r) + 1.0))) - 1.0) * 100.0;
-				if (err < ERROR_MAX) {
+				if (err < ERROR_MAX && ceil(r) < 256) {
 					printf("%8d (%.2f)\t", (int) ceil(r), err);
 				}
 				else {
