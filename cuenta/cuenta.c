@@ -29,6 +29,7 @@ static unsigned int valores[MAX_MEDICIONES] = {0};
 static int i = 0;
 static int m = 6;
 static int d = 0;
+static int x = 0;
 
 static FILE rs232 = FDEV_SETUP_STREAM(uart_putchar, uart_getchar, _FDEV_SETUP_RW);
 
@@ -37,20 +38,27 @@ ISR (INT0_vect)
 	if (d == 1)
 		printf("%d\n", i);
 	if (i == 0) {
-		TCCR1B = _BV(CS12) | _BV(CS10); /* prescaler de 1024 */
+		TIMSK = _BV(OCIE1A); /* interrupion por comparacion */
+		OCR1A = 124; /* 124 (125) 1MHz / 8 = 125000 */
+		TCCR1B = _BV(WGM12) | _BV(CS11); /* prescaler de 8 */
 	}
 	else if (i == m) {
 		TCCR1B = 0; /* detiene el timer */
 		TCNT1 = 0; /* timer a cero */
 		return;
 	}
-	valores[i++] = TCNT1;
+	valores[i++] = x;
+}
+
+ISR (TIMER1_COMPA_vect)
+{
+	x++; /* incremento cada un ms */
 }
 
 static void uart_init(void)
 {
 	UCSRB = _BV(TXEN) | _BV(RXEN); /* TX y RX habilitados */
-	UBRRL = 25; /* 2400 baudios a 1MHz */
+	UBRRL = 12; /* 12 = 4800 bps a 1MHz */
 	stdin = stdout = stderr = &rs232;
 }
 
@@ -129,6 +137,7 @@ void main(void)
 				for (i = 0; i < MAX_MEDICIONES; i++)
 					valores[i] = 0;
 				i = 0;
+				x = 0;
 				break;
 			case 'v':
 				volcar();
