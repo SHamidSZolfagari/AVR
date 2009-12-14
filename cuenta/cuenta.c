@@ -16,7 +16,7 @@
 
 #define F_CPU 1000000UL
 
-#define MAX_MEDICIONES 17 /* 17 mediciones sin sobrepasar el timer a pulsos de 1Hz */
+#define MAX_MEDICIONES 60 /* 60 mediciones */
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -27,27 +27,24 @@ static int uart_putchar(char dato, FILE *stream);
 
 static unsigned int valores[MAX_MEDICIONES] = {0};
 static int i = 0;
-static int m = 6;
-static int d = 0;
-static int x = 0;
+static int m = 10;
+static unsigned int x = 0;
 
 static FILE rs232 = FDEV_SETUP_STREAM(uart_putchar, uart_getchar, _FDEV_SETUP_RW);
 
 ISR (INT0_vect)
 {
-	if (d == 1)
-		printf("%d\n", i);
 	if (i == 0) {
-		TIMSK = _BV(OCIE1A); /* interrupion por comparacion */
-		OCR1A = 124; /* 124 (125) 1MHz / 8 = 125000 */
-		TCCR1B = _BV(WGM12) | _BV(CS11); /* prescaler de 8 */
+		TCCR1B |= _BV(CS11); /* prescaler de 8 */
+		valores[i++] = 0;
 	}
-	else if (i == m) {
-		TCCR1B = 0; /* detiene el timer */
+	else if (i < m) {
+		valores[i++] = x + 1;
+	}
+	else {
+		TCCR1B &= ~(_BV(CS11)); /* detiene el timer */
 		TCNT1 = 0; /* timer a cero */
-		return;
 	}
-	valores[i++] = x;
 }
 
 ISR (TIMER1_COMPA_vect)
@@ -88,19 +85,16 @@ static void volcar(void)
 {
 	int n;
 	printf("\n");
-	for (n = 0; n < m; n++) {
+	for (n = 0; n < m; n++)
 		printf("%u\n", valores[n]);
-	}
 }
 
 static int menu(void)
 {
 	printf("\n");
 	printf("[r] Reiniciar\n");
-	printf("[v] Volcar valores\n");
 	printf("[c] Cantidad de mediciones (%d)\n", m);
-	printf("[m] {debug} Mostrar timer1\n");
-	printf("[d] {debug} Mostrar int0 (%d)\n", d);
+	printf("[v] Volcar valores\n");
 	printf("\n? ");
 	
 	return getchar();
@@ -108,18 +102,15 @@ static int menu(void)
 
 static void configuracion(void)
 {
-	int x;
+	int mm;
 	char buf[4];
-	printf("\n(c) ? ");
+	printf("\n(c) [1, %d] ? ", MAX_MEDICIONES);
 	fgets(buf, sizeof(buf), stdin);
-	sscanf(buf, "%d", &x);
-	if (x > 0 && x < 18) {
-		m = x;
-		TCNT1 = 0;
-		i = 0;
-	}
+	sscanf(buf, "%d", &mm);
+	if (mm > 0 && mm <= MAX_MEDICIONES)
+		m = mm;
 	else
-		printf("\nERROR: %d, fuera de rango [1, 17]\n", x);
+		printf("\nERROR: %d, fuera de rango [1, %d]\n", x, MAX_MEDICIONES);
 }
 
 void main(void)
@@ -128,11 +119,16 @@ void main(void)
 	PORTD = _BV(PD2); /* resistor de pull-up */
 	MCUCR = _BV(ISC01); /* int0 por flanco H->L */
 	GICR = _BV(INT0); /* int0 habilitada */
+	TIMSK = _BV(OCIE1A); /* interrupion por comparacion */
+	TCCR1B = _BV(WGM12); /* modo de borrado del timer cuando cuando la comparacion coincide */
+	OCR1A = 124; /* cuento 125 ints de timer 1MHz / 8 = 125000 da un margen de 1000 overflows */
 	sei();
 	while(1) {
 		switch(menu()) {
+			case 'c':
+				configuracion();
 			case 'r':
-				TCCR1B = 0; /* detengo el timer */
+				TCCR1B &= ~(_BV(CS11)); /* detiene el timer */
 				TCNT1 = 0; /* timer a cero */
 				for (i = 0; i < MAX_MEDICIONES; i++)
 					valores[i] = 0;
@@ -141,15 +137,6 @@ void main(void)
 				break;
 			case 'v':
 				volcar();
-				break;
-			case 'c':
-				configuracion();
-				break;
-			case 'm':
-				printf("\n%u\n", TCNT1);
-				break;
-			case 'd':
-				d = !d;
 				break;
 			default:
 				printf("\n ERROR: opcion invalida\n");
